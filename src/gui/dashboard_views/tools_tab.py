@@ -48,7 +48,7 @@ class ToolsTab(Gtk.Box):
                 row.add_prefix(creator_box)
 
                 # Version badge
-                util_version = util.get("version", "—")
+                util_version = str(util.get("version", "—"))
                 
                 version_badge = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
                 version_badge.set_valign(Gtk.Align.CENTER)
@@ -56,6 +56,13 @@ class ToolsTab(Gtk.Box):
                 
                 v_label = Gtk.Label(label=util_version)
                 v_label.add_css_class("badge-action-row")
+
+                if util_version == "—" :
+                    v_label.set_tooltip_text("No version were provided for the tool")
+                else : 
+                    v_label.set_tooltip_text("Version of the tool")
+
+                
                 
                 version_badge.append(v_label)
                 row.add_suffix(version_badge)

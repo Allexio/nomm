@@ -44,6 +44,7 @@ class DownloadsTab(Gtk.Box):
         action_bar.append(filter_group)
         
         folder_btn = Gtk.Button(icon_name="folder-open-symbolic", css_classes=["flat"])
+        folder_btn.set_tooltip_text("Open Download folder for the game")
         folder_btn.set_halign(Gtk.Align.END)
         folder_btn.set_hexpand(True)
         folder_btn.connect("clicked", lambda x: webbrowser.open(f"file://{self.dashboard.downloads_path}"))
@@ -110,6 +111,11 @@ class DownloadsTab(Gtk.Box):
             version_badge.set_margin_end(20) 
             
             v_label = Gtk.Label(label=version_text)
+            if version_text == "—":
+                v_label.set_tooltip_text("No version were provided for the mod")
+            else :
+                v_label.set_tooltip_text("Version of the mod")
+
             version_badge.append(v_label)
             if changelog:
                 version_badge.set_tooltip_text(changelog)
@@ -146,6 +152,7 @@ class DownloadsTab(Gtk.Box):
             # Trash Button
             d_stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, hhomogeneous=False, interpolate_size=True)
             b_btn = Gtk.Button(icon_name="user-trash-symbolic", valign=Gtk.Align.CENTER, css_classes=["flat"])
+            b_btn.set_tooltip_text("Delete the mod from the game")
             b_btn.set_cursor_from_name("pointer")
             c_btn = Gtk.Button(label=_("Are you sure?"), valign=Gtk.Align.CENTER, css_classes=["destructive-action"])
             c_btn.connect("clicked", self.on_delete_downloaded_archive, file_name)

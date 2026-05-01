@@ -32,18 +32,21 @@ class ModsTab(Gtk.Box):
         action_bar.append(self.mod_search_entry)
 
         folder_btn = Gtk.Button(icon_name="folder-open-symbolic", css_classes=["flat"])
+        folder_btn.set_tooltip_text("Open Download folder for the game")
         folder_btn.set_halign(Gtk.Align.END); folder_btn.set_hexpand(True)
         folder_btn.set_cursor_from_name("pointer")
         folder_btn.connect("clicked", lambda x: webbrowser.open(f"file://{self.dashboard.staging_path}"))
         action_bar.append(folder_btn)
 
         update_btn = Gtk.Button(icon_name="view-refresh-symbolic", css_classes=["flat"])
+        update_btn.set_tooltip_text("Update from the mod folder")
         update_btn.set_halign(Gtk.Align.END)
         update_btn.set_cursor_from_name("pointer")
         update_btn.connect("clicked", self.check_for_updates)
         action_bar.append(update_btn)
 
         launch_btn = Gtk.Button(icon_name="media-playback-start", css_classes=["flat"])
+        launch_btn.set_tooltip_text("Launch the game")
         launch_btn.set_halign(Gtk.Align.END)
         launch_btn.set_cursor_from_name("pointer")
         launch_btn.connect("clicked", self.dashboard.on_launch_clicked)
@@ -256,6 +259,7 @@ class ModsTab(Gtk.Box):
             # Trash
             u_stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, hhomogeneous=False, interpolate_size=True)
             bin_btn = Gtk.Button(icon_name="user-trash-symbolic", valign=Gtk.Align.CENTER, css_classes=["flat"])
+            bin_btn.set_tooltip_text("Delete the mod")
             conf_del_btn = Gtk.Button(label=_("Are you sure?"), valign=Gtk.Align.CENTER, css_classes=["destructive-action"])
             conf_del_btn.connect("clicked", self.dashboard.on_uninstall_item, mod_files, mod)
             
