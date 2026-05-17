@@ -11,8 +11,7 @@ import vdf
 import yaml
 from gi.repository import GLib
 
-from core.tools import load_yaml, write_yaml
-from core.user_config import load_user_config
+from core.tools import load_yaml, write_yaml, load_user_config
 
 meta_lock = threading.Lock()
 
