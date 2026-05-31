@@ -2,6 +2,7 @@ import os
 import pprint
 import shutil
 from pathlib import Path
+from core.tools import retrieve_casesensitive_paths
 import xml.etree.ElementTree as ET
 
 # Parsing the fomod from the XML
@@ -244,21 +245,24 @@ def apply_fomod_selection(mod_staging_dir: str, source_folder_name: str, dest_pa
 
     normalized_source = source_folder_name.replace('\\', '/').strip('/')
     source_path = None
-    
+
     direct_path = os.path.join(mod_staging_dir, normalized_source)
-    if os.path.isdir(direct_path):
-        # checks if direct path is the same as source_path, which means all we have to do is copy the files as it is once extracted
-        source_path = direct_path
+    resolved_direct = direct_path
+    if not os.path.exists(direct_path):
+        resolved_direct = retrieve_casesensitive_paths(direct_path)
+    if os.path.exists(resolved_direct):
+        rel = os.path.relpath(resolved_direct, mod_staging_dir).replace('\\', '/')
+        if rel.lower() == normalized_source.lower():
+            source_path = resolved_direct
     else:
         # Explore the folder to find normalized source from the root
         for root, _, files in os.walk(mod_staging_dir):
             # Calculates relative root and replaces \\ for compatibility
             rel_root = os.path.relpath(root, mod_staging_dir).replace('\\', '/')
-            #If we find the folder, then we break
+            # If we find the folder, then we break
             if rel_root == normalized_source or rel_root.endswith('/' + normalized_source):
                 source_path = root
                 break
-            # To comment
             for f in files:
                 rel_file = os.path.relpath(os.path.join(root, f), mod_staging_dir).replace('\\', '/')
                 if rel_file == normalized_source or rel_file.endswith('/' + normalized_source):
@@ -266,7 +270,6 @@ def apply_fomod_selection(mod_staging_dir: str, source_folder_name: str, dest_pa
                     break
             if source_path:
                 break
-            
     if not source_path:
         raise FileNotFoundError(f"Could not find folder or file '{normalized_source}' in extracted mod.")
 
