@@ -1,0 +1,16 @@
+name: 'Elden Ring'
+steam_folder_name: 'Elden Ring'
+steam_id: 1245620
+nexus_id: 'eldenring'
+mods_path: 'mods/'
+
+essential-utilities:
+  me3:
+    name: 'me3'
+    version: 0.11.0
+    creator: 'garyttierney'
+    creator-link: 'https://github.com/garyttierney'
+    source: 'https://github.com/garyttierney/me3/releases/download/v0.11.0/installer.sh'
+    is_archive: false
+    install_in_game_files: false
+    launch_options: "$HOME/.local/bin/me3 launch -p eldenring-default # %command%"

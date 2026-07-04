@@ -271,15 +271,22 @@ def deploy_essential_utility(util_config: dict, downloads_path: str, staging_pat
     
     game_root = Path(game_path)
 
-    # Archive extraction to staging
-    print("Extracting utility contents")
-    extract_archive(archive_path, staging_path)
+    is_archive = util_config.get("is_archive", True)
+    if is_archive:
+        # Archive extraction to staging
+        print("Extracting utility contents")
+        extract_archive(archive_path, staging_path)
+    else:
+        # Standalone downloaded file (e.g. an installer script) - stage it as-is, no extraction
+        print("Staging non-archive utility file")
+        staging_path.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(archive_path, staging_path / filename)
 
     # Whitelist and blacklist management
     whitelist = util_config.get("whitelist", [])
     blacklist = util_config.get("blacklist", [])
 
-    if whitelist or blacklist:
+    if is_archive and (whitelist or blacklist):
         print("Applying whitelist/blacklist filters to extracted files...")
         files_to_remove = []
 
@@ -340,7 +347,7 @@ def deploy_essential_utility(util_config: dict, downloads_path: str, staging_pat
     # Some utilities require specific launch options to run properly
     launch_options = util_config.get("launch_options")
     if launch_options:
-        add_launch_options(steam_base, launch_options)
+        add_launch_options(steam_base, launch_options, steam_id)
 
 def toggle_mod_state(mod_name: str, mod_files: list, state: bool, staging_dir: str, deployment_map: list) -> dict:
     staging_meta_path = os.path.join(staging_dir, ".staging.nomm.yaml")
