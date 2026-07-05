@@ -13,7 +13,7 @@ from gi.repository import GLib
 from core.tools import load_yaml, write_yaml
 from core.user_config import load_user_config
 from core.archive_manager import extract_archive
-from platforms.steam import add_launch_options
+from platforms.steam import add_launch_options, add_launch_command
 
 meta_lock = threading.Lock()
 
@@ -348,6 +348,12 @@ def deploy_essential_utility(util_config: dict, downloads_path: str, staging_pat
     launch_options = util_config.get("launch_options")
     if launch_options:
         add_launch_options(steam_base, launch_options, steam_id)
+
+    # Some utilities (e.g. me3) fully replace the game's launch command instead of
+    # wrapping it through %command%
+    launch_command = util_config.get("launch_command")
+    if launch_command:
+        add_launch_command(steam_base, launch_command, steam_id)
 
 def toggle_mod_state(mod_name: str, mod_files: list, state: bool, staging_dir: str, deployment_map: list) -> dict:
     staging_meta_path = os.path.join(staging_dir, ".staging.nomm.yaml")

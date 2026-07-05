@@ -194,60 +194,38 @@ def list_archives(archives_directory: str):
     
     return archive_list
 
+def launch_option_merger(current_launch_options: str, new_option: str) -> str:
+    # TODO: add some proprer logic here - notably to check if the new option being added doesn't already exist.
+    merged_launch_option = current_launch_options + " " + new_option
+    return merged_launch_option
+
 _ENV_ASSIGNMENT_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 
-def _split_env_prefix(text: str):
-    """Splits off the leading KEY=VALUE env var assignments from a launch options string,
-    returning (env_prefix, rest)."""
-    tokens = text.split()
+def merge_launch_command(current_launch_options: str, launch_command: str) -> str:
+    """Merges a full launch-command replacement (e.g. me3, which locates and spawns the
+    game itself) into an existing Steam LaunchOptions string. Steam only treats
+    LaunchOptions as a full replacement command if %command% appears somewhere in it -
+    otherwise it silently appends the whole string as trailing args to the real game exe
+    and launch_command never runs at all - so %command% is kept but neutralized in a
+    trailing shell comment (Steam's own documented pattern: "othercommand # %command%").
+    Any existing env-var assignments (KEY=VALUE) are preserved; anything else in the
+    current value is a previous full-replacement command (ours or stale) and is replaced
+    outright, so reinstalling after launch_command changes actually takes effect instead
+    of the new value landing inside a dead comment."""
+    live_current, _, _ = current_launch_options.partition("#")
+    live_current = live_current.strip()
+
+    if launch_command.strip() in live_current:
+        return current_launch_options
+
+    tokens = live_current.split()
     i = 0
     while i < len(tokens) and _ENV_ASSIGNMENT_RE.match(tokens[i]):
         i += 1
-    return " ".join(tokens[:i]), " ".join(tokens[i:])
+    env_prefix = " ".join(tokens[:i])
 
-def _live_launch_options(text: str) -> str:
-    """Strips any trailing shell comment - comments run to end of line and never execute,
-    so a "# %command%" left by a previous merge (see below) is dead weight to carry forward."""
-    live, _, _ = text.partition("#")
-    return live.strip()
-
-def launch_option_merger(current_launch_options: str, new_option: str) -> str:
-    live_current = _live_launch_options(current_launch_options)
-    live_new = _live_launch_options(new_option)
-
-    if not live_new or live_new in live_current:
-        # Already applied (e.g. a repeated Install/Reinstall click) - avoid duplicating it
-        return current_launch_options
-
-    if "%command%" in live_current and "%command%" in live_new:
-        # Keep a single %command%: combine what comes before it from both options
-        # (env vars / wrapper commands), and what comes after (trailing args), if any.
-        current_prefix, current_suffix = live_current.split("%command%", 1)
-        new_prefix, new_suffix = live_new.split("%command%", 1)
-
-        merged_prefix = " ".join(part.strip() for part in (current_prefix, new_prefix) if part.strip())
-        merged_suffix = " ".join(part.strip() for part in (current_suffix, new_suffix) if part.strip())
-
-        merged_launch_option = merged_prefix + " %command%"
-        if merged_suffix:
-            merged_launch_option += " " + merged_suffix
-        return merged_launch_option
-
-    if "%command%" not in live_new:
-        # live_new is a full launcher replacement (e.g. me3, which locates and spawns the
-        # game itself) rather than a wrapper chained through %command%. Steam only treats
-        # LaunchOptions as a full replacement command if %command% appears somewhere in it -
-        # otherwise it appends the whole string as trailing args to the real game exe and
-        # never runs live_new at all. Keep only the leading env-var assignments from the
-        # current live value - anything else is a previous full-replacement command (ours or
-        # stale) and gets replaced outright - then neutralize %command% in a trailing shell
-        # comment (Steam's own documented pattern: "othercommand # %command%").
-        env_prefix, _old_command = _split_env_prefix(live_current)
-        merged = (env_prefix + " " + live_new).strip() if env_prefix else live_new
-        return merged + " # %command%"
-
-    merged_launch_option = (live_current + " " + live_new).strip() if live_current else live_new
-    return merged_launch_option
+    merged = (env_prefix + " " + launch_command).strip() if env_prefix else launch_command.strip()
+    return merged + " # %command%"
 
 def slugify(text: str) -> str:
     return re.sub(r'[^a-z0-9]', '', text.lower())

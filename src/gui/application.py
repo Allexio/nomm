@@ -21,12 +21,9 @@ from gui.dashboard import GameDashboard
 from platforms.nexus import handle_nexus_link
 from platforms.steam import get_username_from_steam_id, get_steam_base_dir
 
-# Allow building a side-by-side Devel variant under a different Flatpak/D-Bus id
-APP_NAME = os.environ.get('FLATPAK_ID', 'com.nomm.Nomm')
+APP_NAME = 'com.nomm.Nomm'
 
-# Kept separate from APP_NAME so the Devel variant still finds the translations
-# installed under the base id.
-translation_system = gettext.translation('com.nomm.Nomm', localedir='/app/share/locale', fallback=True)
+translation_system = gettext.translation(APP_NAME, localedir='/app/share/locale', fallback=True)
 translation_system.install(names=['ngettext'])
 
 class Nomm(Adw.Application):
