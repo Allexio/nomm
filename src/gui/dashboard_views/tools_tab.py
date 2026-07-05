@@ -230,10 +230,9 @@ class ToolsTab(Gtk.Box):
 
             self._add_copyable_code_box(content_box, "killall steam")
 
-            if game_launch_options:
-                launch_value_label = Gtk.Label(label=_("Launch options that will be applied:"), wrap=True, xalign=0)
-                content_box.append(launch_value_label)
-                self._add_copyable_code_box(content_box, game_launch_options)
+            launch_value_label = Gtk.Label(label=_("Launch options that will be applied:"), wrap=True, xalign=0)
+            content_box.append(launch_value_label)
+            self._add_copyable_code_box(content_box, game_launch_options)
 
         # Set the custom box as the extra child of the dialog
         dialog.set_extra_child(content_box)
