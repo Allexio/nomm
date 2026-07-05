@@ -194,28 +194,28 @@ def list_archives(archives_directory: str):
     
     return archive_list
 
-def launch_option_merger(current_launch_options: str, new_option: str) -> str:
+def game_launch_option_merger(current_launch_options: str, new_option: str) -> str:
     # TODO: add some proprer logic here - notably to check if the new option being added doesn't already exist.
     merged_launch_option = current_launch_options + " " + new_option
     return merged_launch_option
 
 _ENV_ASSIGNMENT_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 
-def merge_launch_command(current_launch_options: str, launch_command: str) -> str:
+def merge_utility_launch_command(current_launch_options: str, utility_launch_command: str) -> str:
     """Merges a full launch-command replacement (e.g. me3, which locates and spawns the
     game itself) into an existing Steam LaunchOptions string. Steam only treats
     LaunchOptions as a full replacement command if %command% appears somewhere in it -
     otherwise it silently appends the whole string as trailing args to the real game exe
-    and launch_command never runs at all - so %command% is kept but neutralized in a
-    trailing shell comment (Steam's own documented pattern: "othercommand # %command%").
+    and utility_launch_command never runs at all - so %command% is kept but neutralized in
+    a trailing shell comment (Steam's own documented pattern: "othercommand # %command%").
     Any existing env-var assignments (KEY=VALUE) are preserved; anything else in the
     current value is a previous full-replacement command (ours or stale) and is replaced
-    outright, so reinstalling after launch_command changes actually takes effect instead
-    of the new value landing inside a dead comment."""
+    outright, so reinstalling after utility_launch_command changes actually takes effect
+    instead of the new value landing inside a dead comment."""
     live_current, _, _ = current_launch_options.partition("#")
     live_current = live_current.strip()
 
-    if launch_command.strip() in live_current:
+    if utility_launch_command.strip() in live_current:
         return current_launch_options
 
     tokens = live_current.split()
@@ -224,7 +224,7 @@ def merge_launch_command(current_launch_options: str, launch_command: str) -> st
         i += 1
     env_prefix = " ".join(tokens[:i])
 
-    merged = (env_prefix + " " + launch_command).strip() if env_prefix else launch_command.strip()
+    merged = (env_prefix + " " + utility_launch_command).strip() if env_prefix else utility_launch_command.strip()
     return merged + " # %command%"
 
 def slugify(text: str) -> str:

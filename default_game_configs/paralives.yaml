@@ -19,4 +19,4 @@ essential-utilities:
     creator-link: "https://github.com/BepInEx"
     source: "https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.5/BepInEx_win_x64_5.4.23.5.zip"
     utility_path: ""
-    launch_options: WINEDLLOVERRIDES='winhttp=n,b' %command%
+    game_launch_options: WINEDLLOVERRIDES='winhttp=n,b' %command%

@@ -13,7 +13,7 @@ from gi.repository import GLib
 from core.tools import load_yaml, write_yaml
 from core.user_config import load_user_config
 from core.archive_manager import extract_archive
-from platforms.steam import add_launch_options, add_launch_command
+from platforms.steam import add_game_launch_options, add_utility_launch_command
 
 meta_lock = threading.Lock()
 
@@ -271,22 +271,22 @@ def deploy_essential_utility(util_config: dict, downloads_path: str, staging_pat
     
     game_root = Path(game_path)
 
-    is_archive = util_config.get("is_archive", True)
-    if is_archive:
-        # Archive extraction to staging
-        print("Extracting utility contents")
-        extract_archive(archive_path, staging_path)
-    else:
+    is_single_file = util_config.get("is_single_file", False)
+    if is_single_file:
         # Standalone downloaded file (e.g. an installer script) - stage it as-is, no extraction
         print("Staging non-archive utility file")
         staging_path.mkdir(parents=True, exist_ok=True)
         shutil.copy2(archive_path, staging_path / filename)
+    else:
+        # Archive extraction to staging
+        print("Extracting utility contents")
+        extract_archive(archive_path, staging_path)
 
     # Whitelist and blacklist management
     whitelist = util_config.get("whitelist", [])
     blacklist = util_config.get("blacklist", [])
 
-    if is_archive and (whitelist or blacklist):
+    if not is_single_file and (whitelist or blacklist):
         print("Applying whitelist/blacklist filters to extracted files...")
         files_to_remove = []
 
@@ -345,15 +345,15 @@ def deploy_essential_utility(util_config: dict, downloads_path: str, staging_pat
         subprocess.run(command, shell=True, cwd=game_root)
 
     # Some utilities require specific launch options to run properly
-    launch_options = util_config.get("launch_options")
-    if launch_options:
-        add_launch_options(steam_base, launch_options, steam_id)
+    game_launch_options = util_config.get("game_launch_options")
+    if game_launch_options:
+        add_game_launch_options(steam_base, game_launch_options, steam_id)
 
     # Some utilities (e.g. me3) fully replace the game's launch command instead of
     # wrapping it through %command%
-    launch_command = util_config.get("launch_command")
-    if launch_command:
-        add_launch_command(steam_base, launch_command, steam_id)
+    utility_launch_command = util_config.get("utility_launch_command")
+    if utility_launch_command:
+        add_utility_launch_command(steam_base, utility_launch_command, steam_id)
 
 def toggle_mod_state(mod_name: str, mod_files: list, state: bool, staging_dir: str, deployment_map: list) -> dict:
     staging_meta_path = os.path.join(staging_dir, ".staging.nomm.yaml")

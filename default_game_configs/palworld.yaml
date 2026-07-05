@@ -31,4 +31,4 @@ essential-utilities:
     creator-link: https://github.com/okaetsu
     source: https://github.com/Okaetsu/RE-UE4SS/releases/download/experimental-palworld/UE4SS-Palworld.zip
     utility_path: "/Palword/Pal/Binaries/Win64"
-    launch_options: WINEDLLOVERRIDES='dwmapi=n,b' %command%
+    game_launch_options: WINEDLLOVERRIDES='dwmapi=n,b' %command%

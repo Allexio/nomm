@@ -177,9 +177,9 @@ class ToolsTab(Gtk.Box):
         warning_label = Gtk.Label(label=msg, wrap=True, xalign=0)
         content_box.append(warning_label)
 
-        # Check if launch_options exist in the util dict
-        launch_options = util.get("launch_options")
-        if launch_options:
+        # Check if game_launch_options exist in the util dict
+        game_launch_options = util.get("game_launch_options")
+        if game_launch_options:
             separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
             separator.set_margin_top(8)
             separator.set_margin_bottom(8)
@@ -200,13 +200,13 @@ class ToolsTab(Gtk.Box):
             code_box.set_margin_start(12); code_box.set_margin_end(6)
             code_box.set_margin_top(6); code_box.set_margin_bottom(6)
 
-            options_label = Gtk.Label(label=launch_options, selectable=True, xalign=0)
+            options_label = Gtk.Label(label=game_launch_options, selectable=True, xalign=0)
             options_label.add_css_class("monospace")
-            
+
             copy_btn = Gtk.Button(icon_name="edit-copy-symbolic")
             copy_btn.set_tooltip_text(_("Copy to Clipboard"))
             copy_btn.add_css_class("flat")
-            copy_btn.connect("clicked", self.dashboard.app.copy_to_clipboard, launch_options)
+            copy_btn.connect("clicked", self.dashboard.app.copy_to_clipboard, game_launch_options)
 
             code_box.append(options_label)
             code_box.set_hexpand(True)

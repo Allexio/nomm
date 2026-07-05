@@ -5,7 +5,7 @@ import vdf
 from typing import List, Dict, Optional, Any
 
 from core.user_config import load_user_config
-from core.tools import launch_option_merger, merge_launch_command, slugify, write_yaml
+from core.tools import game_launch_option_merger, merge_utility_launch_command, slugify, write_yaml
 
 def get_steam_base_dir() -> Optional[str]:
     paths = [
@@ -37,27 +37,27 @@ def get_library_paths(steam_base) -> List[str]:
         print(f"Error parsing VDF at {vdf_path}: {e}")
     return libraries
 
-def add_launch_options(steam_base, launch_options, steam_id):
-    print(f"Adding Steam launch options: {launch_options}")
+def add_game_launch_options(steam_base, game_launch_options, steam_id):
+    print(f"Adding Steam launch options: {game_launch_options}")
     localconfig_path = steam_base + "userdata/" + load_user_config()["steam_user_id"] + "/config/localconfig.vdf"
     print(f"...to localconfig file located at: {localconfig_path}")
     with open(localconfig_path, 'r') as vdf_file:
         localconfig = vdf.load(vdf_file)
     game_data = localconfig["UserLocalConfigStore"]["Software"]["Valve"]["Steam"]["apps"][str(steam_id)]
     if "LaunchOptions" not in game_data:
-        localconfig["UserLocalConfigStore"]["Software"]["Valve"]["Steam"]["apps"][str(steam_id)]["LaunchOptions"] = launch_options
+        localconfig["UserLocalConfigStore"]["Software"]["Valve"]["Steam"]["apps"][str(steam_id)]["LaunchOptions"] = game_launch_options
     else:
-        localconfig["UserLocalConfigStore"]["Software"]["Valve"]["Steam"]["apps"][str(steam_id)]["LaunchOptions"] = launch_option_merger(game_data["LaunchOptions"], launch_options)
+        localconfig["UserLocalConfigStore"]["Software"]["Valve"]["Steam"]["apps"][str(steam_id)]["LaunchOptions"] = game_launch_option_merger(game_data["LaunchOptions"], game_launch_options)
     with open(localconfig_path, 'w') as vdf_file:
         vdf.dump(localconfig, vdf_file)
 
-def add_launch_command(steam_base, launch_command, steam_id):
-    print(f"Adding Steam launch command: {launch_command}")
+def add_utility_launch_command(steam_base, utility_launch_command, steam_id):
+    print(f"Adding Steam launch command: {utility_launch_command}")
     localconfig_path = steam_base + "userdata/" + load_user_config()["steam_user_id"] + "/config/localconfig.vdf"
     with open(localconfig_path, 'r') as vdf_file:
         localconfig = vdf.load(vdf_file)
     game_data = localconfig["UserLocalConfigStore"]["Software"]["Valve"]["Steam"]["apps"][str(steam_id)]
-    game_data["LaunchOptions"] = merge_launch_command(game_data.get("LaunchOptions", ""), launch_command)
+    game_data["LaunchOptions"] = merge_utility_launch_command(game_data.get("LaunchOptions", ""), utility_launch_command)
     with open(localconfig_path, 'w') as vdf_file:
         vdf.dump(localconfig, vdf_file)
 
