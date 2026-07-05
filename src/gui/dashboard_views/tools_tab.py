@@ -6,7 +6,7 @@ from pathlib import Path
 
 from gi.repository import Adw, GLib, Gtk
 
-from core.mod_manager import deploy_essential_utility
+from core.mod_manager import deploy_essential_utility, launch_utility_command
 
 _ = gettext.gettext
 
@@ -22,7 +22,7 @@ class ToolsTab(Gtk.Box):
         self.download_maps = {}
         
         utilities_cfg = self.dashboard.game_config.get("essential-utilities", {})
-        
+
         if not utilities_cfg or not isinstance(utilities_cfg, dict):
             self.append(Gtk.Label(label=_("No utilities defined."), css_classes=["dim-label"]))
         else:
@@ -104,11 +104,21 @@ class ToolsTab(Gtk.Box):
                 if not staging_dir.exists():
                     inst_btn.add_css_class("suggested-action")
                 inst_btn.connect("clicked", self.on_utility_install_clicked, util)
-                
+
                 stack.add_named(overlay, "download")
                 stack.add_named(inst_btn, "install")
                 stack.set_visible_child_name("install" if local_zip_path.exists() else "download")
-                
+
+                utility_launch_command = util.get("utility_launch_command")
+                if utility_launch_command:
+                    play_btn = Gtk.Button(icon_name="media-playback-start", css_classes=["flat"])
+                    play_btn.set_valign(Gtk.Align.CENTER)
+                    play_btn.set_cursor_from_name("pointer")
+                    play_btn.set_tooltip_text(_("Launch {}").format(util.get("name", util_id)))
+                    play_btn.set_visible(staging_dir.exists())
+                    play_btn.connect("clicked", self.on_utility_launch_clicked, util)
+                    row.add_suffix(play_btn)
+
                 row.add_suffix(stack)
                 list_box.append(row)
             
@@ -201,11 +211,8 @@ class ToolsTab(Gtk.Box):
         warning_label = Gtk.Label(label=msg, wrap=True, xalign=0)
         content_box.append(warning_label)
 
-        # Check if game_launch_options or utility_launch_command exist in the util dict -
-        # both write to Steam's own launch config, so both need the same Steam-closed warning
         game_launch_options = util.get("game_launch_options")
-        utility_launch_command = util.get("utility_launch_command")
-        if game_launch_options or utility_launch_command:
+        if game_launch_options:
             separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
             separator.set_margin_top(8)
             separator.set_margin_bottom(8)
@@ -228,11 +235,6 @@ class ToolsTab(Gtk.Box):
                 content_box.append(launch_value_label)
                 self._add_copyable_code_box(content_box, game_launch_options)
 
-            if utility_launch_command:
-                launch_value_label = Gtk.Label(label=_("Launch command that will be applied:"), wrap=True, xalign=0)
-                content_box.append(launch_value_label)
-                self._add_copyable_code_box(content_box, utility_launch_command)
-
         # Set the custom box as the extra child of the dialog
         dialog.set_extra_child(content_box)
         
@@ -251,8 +253,15 @@ class ToolsTab(Gtk.Box):
     def execute_utility_install(self, util):
 
         deploy_essential_utility(util, self.dashboard.downloads_path, self.dashboard.staging_path, self.dashboard.game_path, self.dashboard.app.steam_base, self.dashboard.game_config.get("steam_id"))
-        
+
         self.dashboard.show_message(
             _("Success"),
             _("{} has been installed.").format(util.get('name'))
         )
+        self.dashboard.create_tools_page()
+
+    def on_utility_launch_clicked(self, btn, util):
+        try:
+            launch_utility_command(util["utility_launch_command"], self.dashboard.game_path)
+        except Exception as e:
+            self.dashboard.show_message(_("Launch Failed"), str(e))

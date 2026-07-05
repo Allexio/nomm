@@ -13,4 +13,5 @@ essential-utilities:
     source: 'https://github.com/garyttierney/me3/releases/download/v0.11.0/installer.sh'
     is_single_file: true
     install_in_game_files: false
+    enable_command: "sh installer.sh"
     utility_launch_command: "$HOME/.local/bin/me3 launch -p eldenring-default"

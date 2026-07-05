@@ -13,7 +13,7 @@ from gi.repository import GLib
 from core.tools import load_yaml, write_yaml
 from core.user_config import load_user_config
 from core.archive_manager import extract_archive
-from platforms.steam import add_game_launch_options, add_utility_launch_command
+from platforms.steam import add_game_launch_options
 
 meta_lock = threading.Lock()
 
@@ -338,22 +338,27 @@ def deploy_essential_utility(util_config: dict, downloads_path: str, staging_pat
                 except Exception as e:
                     print(f"[!] Failed to copy {relative_path} to game directory: {e}")
 
-    # Some utilities require a command to be launched as a one-shot to enable the utility
+    # Some utilities require a command to be launched as a one-shot to enable the utility.
+    # Runs from the game directory when deployed there, otherwise from the utility's own
+    # staging directory (e.g. me3, which isn't copied into game_path at all).
     command = util_config.get("enable_command")
     if command:
+        enable_cwd = game_root if is_internal else staging_path
         print(f"Running utility enable command: {command}")
-        subprocess.run(command, shell=True, cwd=game_root)
+        subprocess.run(command, shell=True, cwd=enable_cwd)
 
     # Some utilities require specific launch options to run properly
     game_launch_options = util_config.get("game_launch_options")
     if game_launch_options:
         add_game_launch_options(steam_base, game_launch_options, steam_id)
 
-    # Some utilities (e.g. me3) fully replace the game's launch command instead of
-    # wrapping it through %command%
-    utility_launch_command = util_config.get("utility_launch_command")
-    if utility_launch_command:
-        add_utility_launch_command(steam_base, utility_launch_command, steam_id)
+def launch_utility_command(utility_launch_command: str, game_path: str) -> None:
+    """Launches a utility's full launch-command replacement (e.g. me3) directly, detached
+    from NOMM. Uses Popen + start_new_session rather than run(), since unlike the one-shot,
+    blocking enable_command used during install, the launched process is long-running/
+    interactive and must not block the GTK main loop or die if NOMM later exits."""
+    print(f"Launching utility command: {utility_launch_command}")
+    subprocess.Popen(utility_launch_command, shell=True, cwd=game_path, start_new_session=True)
 
 def toggle_mod_state(mod_name: str, mod_files: list, state: bool, staging_dir: str, deployment_map: list) -> dict:
     staging_meta_path = os.path.join(staging_dir, ".staging.nomm.yaml")

@@ -4,7 +4,8 @@ import vdf
 import requests
 import re
 
-from typing import List, Dict, Any
+from pathlib import Path
+from typing import List, Dict, Any, Optional
 from gi.repository import GLib, Gio
 
 def get_contrast_color(hex_code: str) -> str:
@@ -199,33 +200,19 @@ def game_launch_option_merger(current_launch_options: str, new_option: str) -> s
     merged_launch_option = current_launch_options + " " + new_option
     return merged_launch_option
 
-_ENV_ASSIGNMENT_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
-
-def merge_utility_launch_command(current_launch_options: str, utility_launch_command: str) -> str:
-    """Merges a full launch-command replacement (e.g. me3, which locates and spawns the
-    game itself) into an existing Steam LaunchOptions string. Steam only treats
-    LaunchOptions as a full replacement command if %command% appears somewhere in it -
-    otherwise it silently appends the whole string as trailing args to the real game exe
-    and utility_launch_command never runs at all - so %command% is kept but neutralized in
-    a trailing shell comment (Steam's own documented pattern: "othercommand # %command%").
-    Any existing env-var assignments (KEY=VALUE) are preserved; anything else in the
-    current value is a previous full-replacement command (ours or stale) and is replaced
-    outright, so reinstalling after utility_launch_command changes actually takes effect
-    instead of the new value landing inside a dead comment."""
-    live_current, _, _ = current_launch_options.partition("#")
-    live_current = live_current.strip()
-
-    if utility_launch_command.strip() in live_current:
-        return current_launch_options
-
-    tokens = live_current.split()
-    i = 0
-    while i < len(tokens) and _ENV_ASSIGNMENT_RE.match(tokens[i]):
-        i += 1
-    env_prefix = " ".join(tokens[:i])
-
-    merged = (env_prefix + " " + utility_launch_command).strip() if env_prefix else utility_launch_command.strip()
-    return merged + " # %command%"
+def get_installed_utility_launch_command(game_config: dict, staging_path) -> Optional[str]:
+    """Returns the utility_launch_command of the first installed executable utility
+    (i.e. one with utility_launch_command set whose staging directory exists) in a game's
+    essential-utilities, or None if there isn't one. Used to decide whether NOMM should
+    launch a tool (e.g. me3) directly instead of handing off to Steam/Heroic."""
+    utilities = game_config.get("essential-utilities", {}) or {}
+    for util in utilities.values():
+        command = util.get("utility_launch_command")
+        if not command:
+            continue
+        if (Path(staging_path) / "utilities" / util.get("name", "")).exists():
+            return command
+    return None
 
 def slugify(text: str) -> str:
     return re.sub(r'[^a-z0-9]', '', text.lower())

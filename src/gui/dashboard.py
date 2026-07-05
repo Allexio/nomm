@@ -13,10 +13,10 @@ import yaml
 from gi.repository import Adw, Gdk, Gio, Gtk
 
 from core.user_config import parse_deployment_paths
-from core.tools import load_yaml, write_yaml
+from core.tools import load_yaml, write_yaml, get_installed_utility_launch_command
 from core.mod_manager import (completely_uninstall_mod, get_metadata_path,
                               get_mod_statistics, load_staging_metadata,
-                              remove_mod_from_metadata)
+                              remove_mod_from_metadata, launch_utility_command)
 from core.tools import get_contrast_color
 from gui.dashboard_views.downloads_tab import DownloadsTab
 from gui.dashboard_views.mods_tab import ModsTab
@@ -288,6 +288,13 @@ class GameDashboard(Gtk.Box):
     def on_launch_clicked(self, btn):
         if self.app_id:
             if self.platform == "steam":
+                launch_command = get_installed_utility_launch_command(self.game_config, self.staging_path)
+                if launch_command:
+                    try:
+                        launch_utility_command(launch_command, self.game_path)
+                    except Exception as e:
+                        self.show_message(_("Launch Failed"), str(e))
+                    return
                 webbrowser.open(f"steam://launch/{self.app_id}")
             elif self.platform == "heroic-gog":
                 webbrowser.open(f"heroic://launch/gog/{self.app_id}")
