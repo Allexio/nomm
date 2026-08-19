@@ -57,6 +57,26 @@ class ModsTab(Gtk.Box):
         
         action_bar.append(filter_group)
 
+        spacer = Gtk.Box(hexpand=True)
+        action_bar.append(spacer)
+
+        if "nexus_id" in dashboard.game_config:
+            nexus_id = dashboard.game_config["nexus_id"]
+            nexus_btn = create_icon_button(
+                icon_name="nexus-logo",
+                tooltip=_("Open Nexus Mods page"),
+                on_click=lambda x: webbrowser.open(f"https://www.nexusmods.com/{nexus_id}/mods/")
+            )
+            action_bar.append(nexus_btn)
+
+        if "wiki_link" in dashboard.game_config:
+            wiki_btn = create_icon_button(
+                icon_name="globe-book-symbolic",
+                tooltip=_("Open wiki page"),
+                on_click=lambda x: webbrowser.open(f"https://nomm.moe/docs/game-guides/{dashboard.game_config['wiki_link']}")
+            )
+            action_bar.append(wiki_btn)
+
         folder_btn = create_icon_button(
             icon_name="mat-folder-symbolic",
             tooltip=_("Open staging folder"),
@@ -67,20 +87,7 @@ class ModsTab(Gtk.Box):
             tooltip=_("Refresh Metadata & Check for updates\nThis will replace all current mod metadata with fresh data coming straight from the modding platform."),
             on_click=self.check_for_updates
         )
-        
-        if "wiki_link" in dashboard.game_config:
-            wiki_btn = create_icon_button(
-                icon_name="globe-book-symbolic",
-                tooltip=_("Open wiki page"),
-                on_click=lambda x: webbrowser.open(f"https://nomm.moe/docs/game-guides/{dashboard.game_config["wiki_link"]}")
-            )
-            wiki_btn.set_hexpand(True)
-            action_bar.append(wiki_btn)
-        else:
-            # This is so that the buttons all show up on the right side, even if there is no wiki button
-            folder_btn.set_hexpand(True)
 
-        # Add all the buttons
         action_bar.append(folder_btn)
         action_bar.append(update_btn)
 
@@ -112,6 +119,46 @@ class ModsTab(Gtk.Box):
         self.revealer.set_hexpand(False) 
         self.revealer.set_halign(Gtk.Align.END)
         self.main_content.append(self.revealer)
+
+        # Empty State
+        self.empty_state = Adw.StatusPage(
+            icon_name="nexus-logo" if "nexus_id" in dashboard.game_config else "nomm-logo",
+            title=_("No Mods Installed Yet"),
+            description=_("You haven't installed any mods for this game yet.\nBrowse Nexus Mods to download mods with 'Mod Manager Download', or install downloaded archives from the Downloads tab."),
+            vexpand=True,
+            hexpand=True
+        )
+        
+        empty_buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.CENTER)
+        
+        if "nexus_id" in dashboard.game_config:
+            nexus_id = dashboard.game_config["nexus_id"]
+            browse_nexus_btn = Gtk.Button()
+            browse_nexus_btn.set_child(Adw.ButtonContent(icon_name="nexus-logo", label=_("Browse Nexus Mods")))
+            browse_nexus_btn.add_css_class("suggested-action")
+            browse_nexus_btn.add_css_class("pill")
+            browse_nexus_btn.set_cursor_from_name("pointer")
+            browse_nexus_btn.connect("clicked", lambda x: webbrowser.open(f"https://www.nexusmods.com/{nexus_id}/mods/"))
+            empty_buttons.append(browse_nexus_btn)
+
+        downloads_btn = Gtk.Button()
+        downloads_btn.set_child(Adw.ButtonContent(icon_name="folder-download-symbolic", label=_("Go to Downloads")))
+        downloads_btn.add_css_class("pill")
+        downloads_btn.set_cursor_from_name("pointer")
+        downloads_btn.connect("clicked", lambda x: self.dashboard.dl_tab_btn.set_active(True))
+        empty_buttons.append(downloads_btn)
+
+        if "wiki_link" in dashboard.game_config:
+            wiki_guide_btn = Gtk.Button()
+            wiki_guide_btn.set_child(Adw.ButtonContent(icon_name="globe-book-symbolic", label=_("Modding Guide")))
+            wiki_guide_btn.add_css_class("pill")
+            wiki_guide_btn.set_cursor_from_name("pointer")
+            wiki_guide_btn.connect("clicked", lambda x: webbrowser.open(f"https://nomm.moe/docs/game-guides/{dashboard.game_config['wiki_link']}"))
+            empty_buttons.append(wiki_guide_btn)
+
+        self.empty_state.set_child(empty_buttons)
+        self.append(self.empty_state)
+        self.empty_state.set_visible(False)
 
         self.setup_preview_pane()
         self.populate_list()
@@ -741,8 +788,12 @@ class ModsTab(Gtk.Box):
                 self.mods_list_box.remove(child)
 
             if not staging_metadata or not staging_metadata.get("mods"):
-                self.append(Gtk.Label(label=_("The staging metadata file could not be found, did you install any mods?"), css_classes=["dim-label"]))
+                self.main_content.set_visible(False)
+                self.empty_state.set_visible(True)
                 return
+            else:
+                self.empty_state.set_visible(False)
+                self.main_content.set_visible(True)
 
             file_badge_sizegroup = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
             load_index_sizegroup = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)

@@ -54,13 +54,24 @@ class DownloadsTab(Gtk.Box):
         
         action_bar.append(filter_group)
         
+        spacer = Gtk.Box(hexpand=True)
+        action_bar.append(spacer)
+
+        if "nexus_id" in self.dashboard.game_config:
+            nexus_id = self.dashboard.game_config["nexus_id"]
+            nexus_btn = create_icon_button(
+                icon_name="nexus-logo",
+                tooltip=_("Open Nexus Mods page"),
+                on_click=lambda x: webbrowser.open(f"https://www.nexusmods.com/{nexus_id}/mods/")
+            )
+            action_bar.append(nexus_btn)
+
         # Folder button
         folder_btn = create_icon_button(
             icon_name="mat-folder-symbolic",
             tooltip=_("Open downloads folder"),
             on_click=lambda x: webbrowser.open(f"file://{self.dashboard.downloads_path}")
         )
-        folder_btn.set_hexpand(True)
         action_bar.append(folder_btn)
         
         
@@ -75,6 +86,38 @@ class DownloadsTab(Gtk.Box):
         self.scrolled = Gtk.ScrolledWindow(vexpand=True)
         self.scrolled.set_child(self.list_box)
         self.append(self.scrolled)
+
+        # Empty State
+        self.empty_state = Adw.StatusPage(
+            icon_name="folder-download-symbolic",
+            title=_("No Downloads Found"),
+            description=_("Drag and drop mod archives (.zip, .7z, .rar) into this window,\nor download them directly from Nexus Mods using 'Mod Manager Download'."),
+            vexpand=True,
+            hexpand=True
+        )
+
+        dl_empty_buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.CENTER)
+
+        if "nexus_id" in self.dashboard.game_config:
+            nexus_id = self.dashboard.game_config["nexus_id"]
+            browse_nexus_btn = Gtk.Button()
+            browse_nexus_btn.set_child(Adw.ButtonContent(icon_name="nexus-logo", label=_("Browse Nexus Mods")))
+            browse_nexus_btn.add_css_class("suggested-action")
+            browse_nexus_btn.add_css_class("pill")
+            browse_nexus_btn.set_cursor_from_name("pointer")
+            browse_nexus_btn.connect("clicked", lambda x: webbrowser.open(f"https://www.nexusmods.com/{nexus_id}/mods/"))
+            dl_empty_buttons.append(browse_nexus_btn)
+
+        open_folder_btn = Gtk.Button()
+        open_folder_btn.set_child(Adw.ButtonContent(icon_name="mat-folder-symbolic", label=_("Open Downloads Folder")))
+        open_folder_btn.add_css_class("pill")
+        open_folder_btn.set_cursor_from_name("pointer")
+        open_folder_btn.connect("clicked", lambda x: webbrowser.open(f"file://{self.dashboard.downloads_path}"))
+        dl_empty_buttons.append(open_folder_btn)
+
+        self.empty_state.set_child(dl_empty_buttons)
+        self.append(self.empty_state)
+        self.empty_state.set_visible(False)
         
         # Drag and drop files into the download box
         drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
@@ -114,6 +157,14 @@ class DownloadsTab(Gtk.Box):
 
             while child := self.list_box.get_first_child():
                 self.list_box.remove(child)
+
+            if not files:
+                self.scrolled.set_visible(False)
+                self.empty_state.set_visible(True)
+                return
+            else:
+                self.empty_state.set_visible(False)
+                self.scrolled.set_visible(True)
 
             install_btn_sizegroup = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
             version_badge_sizegroup = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
