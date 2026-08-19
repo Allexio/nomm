@@ -62,6 +62,7 @@ Phase 2 Development Progress:
 - [X] Let user define load orders
 - [x] Add support for GOG libraries / games (through Heroic)
 - [x] Add support for Epic libraries / games (through Heroic)
+- [x] Add support for Nintendo Switch emulation (Ryujinx/Ryubing, Eden, Citron)
 - [x] Detect conflicts
 
 Phase 3 Development Progress:
@@ -69,6 +70,8 @@ Phase 3 Development Progress:
 - [x] Review access rights to be more restrictive
 - [ ] Make a Flathub build
 - [x] Handle more complex FOMOD, and handle them cleanly
+- [x] Scan & migrate legacy/unmanaged mods in game directories
+- [x] GameBanana integration for Switch titles
 
 Bonus (nice to have)
 - [ ] Game profiles?
@@ -76,9 +79,10 @@ Bonus (nice to have)
 
 ## Installing/Running
 
+### Flatpak
 The easiest way to run the app is with flatpak!
 
-To do so :
+To do so:
 
 1. Go to the [releases](https://github.com/Allexio/nomm/releases) tab.
 2. Expand the `Assets` box of the latest version
@@ -87,56 +91,64 @@ To do so :
 5. Once there you should have a button to install the app, click it.
 6. Once installed, you will see a `Launch` or `Run` button appear, click it.
 
-And you're done!
+Or via command line:
+```bash
+flatpak install nomm.flatpak
+flatpak run moe.nomm.Nomm
+```
 
-For more advanced users (those who prefer the console or may not have a standard distro)
-
-You may install and run the flatpak via command line:
-4. `flatpak install nomm.flatpak`
-5. `flatpak run flatpak run moe.nomm.Nomm`
-
-From now on when you want to launch it you can just look for it in your start menu (by typing "nomm")
+### Arch Linux / AUR
+NOMM is available on the Arch User Repository (AUR):
+```bash
+yay -S nomm
+# or for the latest development version:
+yay -S nomm-nightly-git
+```
 
 ## Building
 
 ### Dependencies
 
 The app is built with:
-- [Python](python.org) (3.14) -> ...Python...
-- [GTK](https://www.gtk.org/) (>4.0) -> UI framework
-- [Libadwaita](https://gnome.pages.gitlab.gnome.org/libadwaita/) -> UI framework
-- [Requests](https://pypi.org/project/requests/) -> requests to nexusmods, gog, epic, etc.
-- [Unrar](https://pypi.org/project/unrar/) -> extraction of mods in rar format
-- [vdf](https://github.com/ValvePython/vdf) -> read steam config files
-- [PyYAML](https://pyyaml.org/) -> read and write yaml files
+- [Python](https://www.python.org/) (>= 3.10)
+- [GTK](https://www.gtk.org/) (4.0) & [Libadwaita](https://gnome.pages.gitlab.gnome.org/libadwaita/) (via `python-gobject`)
+- [Requests](https://pypi.org/project/requests/) -> API requests to Nexus Mods, GameBanana, etc.
+- [rarfile](https://pypi.org/project/rarfile/) & [7-Zip](https://www.7-zip.org/) (`p7zip`) -> extraction of mod archives
+- [vdf](https://github.com/ValvePython/vdf) -> read Steam library and config files
+- [PyYAML](https://pyyaml.org/) -> read and write game definitions and staging metadata
 
-### Prerequisites
+### Running directly from source
 
-To build a flatpak you need to have a distro with flatpak support (most of them do) -> this should normally include the `flatpak-builder` utility.
-
-### Building the app
-
-1. Clone the repository
+Make sure dependencies are installed, then run:
+```bash
+python3 src/main.py
 ```
+
+### Building packages
+
+1. Clone the repository:
+```bash
 git clone https://github.com/Allexio/nomm.git
+cd nomm
+```
+
+2. Make `build.sh` executable:
+```bash
+chmod +x ./build/build.sh
 ```
 
 #### Flatpak
-
-2. Make the `build.sh` file executable. From the downloaded folder use this command:
 ```bash
-chmod +x ./build/build-flatpak.sh
+./build/build.sh flatpak
 ```
-3. Run `./build.sh flatpak`
-4. Wait for flatpak to be built
-5. You should now have a `nomm.flatpak` file in the directory
-6. To install your newly obtained flatpak, follow the steps in the "[Installing/Running](https://github.com/Allexio/nomm?tab=readme-ov-file#installingrunning)" section above
+This will create `nomm.flatpak` in the repository root.
 
-#### AUR
-
-2. Make the `build-aur.sh` file executable. from the downloaded folder use this command:
+#### AUR (Arch Linux)
+- To build and install the release package:
 ```bash
-chmod +x ./build/build-aur.sh
+./build/build.sh aur
 ```
-3. Run `./build.sh aur`
-4. Wait for AUR package to be installed
+- To build and install the latest nightly version:
+```bash
+./build/build.sh aur-nightly
+```
