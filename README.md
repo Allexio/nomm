@@ -111,16 +111,30 @@ Phase 2 Development Progress:
 - [x] Detect conflicts
 
 Phase 3 Development Progress:
-- [x] Manage conflicts (for sure this will be hard without an actually good developer)
+- [x] Manage conflicts
 - [x] Review access rights to be more restrictive
-- [ ] Make a Flathub build
-- [x] Handle more complex FOMOD, and handle them cleanly
+- [x] Handle complex FOMOD installers cleanly
 - [x] Scan & migrate legacy/unmanaged mods in game directories
 - [x] GameBanana integration for Switch titles
+- [ ] In-App "Add Custom Game" config wizard
+- [ ] Steam Deck & controller navigation / handheld UI tweaks
+- [ ] Make an official Flathub release build
 
-Bonus (nice to have)
-- [ ] Game profiles?
-- [ ] ???
+Phase 4 (Bethesda & Extended Modding Engine):
+- [ ] Bethesda RPG support (Fallout 4, Fallout: New Vegas, Skyrim Special Edition, Starfield)
+- [ ] Automatic `plugins.txt` synchronisation (ESP/ESM/ESL plugin activation in Proton prefixes)
+- [ ] Automatic `Fallout4Custom.ini` / `SkyrimCustom.ini` loose file invalidation configuration
+- [ ] Script Extender integration & launch wrapper (F4SE, NVSE/xNVSE, SKSE)
+- [ ] Detailed file-level conflict & overwrite tree viewer in preview pane
+- [ ] LOOT (Load Order Optimisation Tool) sorting integration
+
+Phase 5 (Profiles, Collections & Multi-Platform):
+- [ ] Mod Profiles & Presets (switch between Vanilla+, Overhaul, and Multiplayer setups)
+- [ ] 1-Click Mod Collection / Modpack import & export
+- [ ] Lutris & Bottles library auto-detection
+- [ ] Thunderstore & CurseForge platform integration
+- [ ] Batch archive import & queue
+- [ ] Savegame mod inspector & backup snapshots
 
 ## Installing/Running
 
