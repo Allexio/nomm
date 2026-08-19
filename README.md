@@ -29,6 +29,77 @@ Instead, think of NOMM as more of a general purpose tool for most games that jus
 - Beginner-friendly
 - Fully open
 
+## Supported Games
+
+NOMM supports a growing library of PC and emulated titles out of the box:
+
+<details>
+<summary><b>PC Games (Steam / GOG / Epic Games) - 34+ Games</b></summary>
+
+- 7 Days to Die
+- Abiotic Factor
+- Baldur's Gate 3
+- Blade & Sorcery
+- Cat Quest II
+- Crash Bandicoot 4: It’s About Time
+- Cyberpunk 2077
+- Dead as Disco
+- FINAL FANTASY VII REBIRTH
+- FINAL FANTASY VII REMAKE INTERGRADE
+- KINGDOM HEARTS III
+- Marvel Rivals
+- Metal Gear Solid Δ: Snake Eater
+- Monster Hunter Wilds
+- Pacific Drive
+- Palworld
+- Paralives
+- PRAGMATA
+- Ready or Not
+- Resident Evil 2
+- Resident Evil 3
+- Resident Evil 4
+- Resident Evil 7 Biohazard
+- Resident Evil Village
+- SpongeBob SquarePants: Battle for Bikini Bottom - Rehydrated
+- SpongeBob SquarePants: The Cosmic Shake
+- Spyro Reignited Trilogy
+- STAR WARS Jedi: Fallen Order
+- Stellar Blade
+- Subnautica
+- The Sims 4
+- The Witcher 3: Wild Hunt
+- Valheim
+- Warhammer 40,000: Darktide
+</details>
+
+<details>
+<summary><b>Nintendo Switch (Ryujinx / Eden / Citron) - 150+ Games</b></summary>
+
+- Animal Crossing: New Horizons
+- Bayonetta 1, 2, 3 & Origins
+- Fire Emblem: Three Houses & Engage
+- Kirby and the Forgotten Land & Star Allies
+- Luigi's Mansion 2 HD & 3
+- Mario Kart 8 Deluxe
+- Mario Party Superstars & Super Mario Party
+- Metroid Dread & Metroid Prime Remastered
+- Monster Hunter Rise & Generations Ultimate
+- Paper Mario: The Origami King & Thousand-Year Door
+- Pikmin 1, 2, 3 Deluxe & 4
+- Pokémon: Scarlet, Violet, Sword, Shield, Legends: Arceus, Let's Go Pikachu/Eevee, Brilliant Diamond/Shining Pearl
+- Splatoon 2 & 3
+- Super Mario 3D World + Bowser's Fury
+- Super Mario Bros. Wonder
+- Super Mario Odyssey
+- Super Mario RPG
+- Super Smash Bros. Ultimate
+- The Legend of Zelda: Breath of the Wild
+- The Legend of Zelda: Tears of the Kingdom
+- The Legend of Zelda: Link's Awakening & Echoes of Wisdom
+- Xenoblade Chronicles: Definitive Edition, 2 & 3
+- *...and over 120 more titles!*
+</details>
+
 ## How can you add support for a game?
 
 One of the main ideas behind this project is that games are defined by easy to create config `.yaml` files.
