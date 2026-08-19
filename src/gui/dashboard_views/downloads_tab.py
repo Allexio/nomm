@@ -57,7 +57,16 @@ class DownloadsTab(Gtk.Box):
         spacer = Gtk.Box(hexpand=True)
         action_bar.append(spacer)
 
-        if "nexus_id" in self.dashboard.game_config:
+        if self.dashboard.platform == "switch":
+            from urllib.parse import quote
+            gb_url = f"https://gamebanana.com/games/search?_sSearchString={quote(self.dashboard.game_name)}"
+            gb_btn = create_icon_button(
+                icon_name="gamebanana-logo",
+                tooltip=_(f"Browse GameBanana mods for {self.dashboard.game_name}"),
+                on_click=lambda x: webbrowser.open(gb_url)
+            )
+            action_bar.append(gb_btn)
+        elif "nexus_id" in self.dashboard.game_config:
             nexus_id = self.dashboard.game_config["nexus_id"]
             nexus_btn = create_icon_button(
                 icon_name="nexus-logo",
@@ -74,7 +83,6 @@ class DownloadsTab(Gtk.Box):
         )
         action_bar.append(folder_btn)
         
-        
         self.append(action_bar)
 
         # Downloads
@@ -88,17 +96,28 @@ class DownloadsTab(Gtk.Box):
         self.append(self.scrolled)
 
         # Empty State
+        is_switch = (self.dashboard.platform == "switch")
         self.empty_state = Adw.StatusPage(
             icon_name="folder-download-symbolic",
             title=_("No Downloads Found"),
-            description=_("Drag and drop mod archives (.zip, .7z, .rar) into this window,\nor download them directly from Nexus Mods using 'Mod Manager Download'."),
+            description=_("Drag and drop Switch mod archives (.zip, .7z, .rar) into this window,\nor download them directly from GameBanana.") if is_switch else _("Drag and drop mod archives (.zip, .7z, .rar) into this window,\nor download them directly from Nexus Mods using 'Mod Manager Download'."),
             vexpand=True,
             hexpand=True
         )
 
         dl_empty_buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.CENTER)
 
-        if "nexus_id" in self.dashboard.game_config:
+        if is_switch:
+            from urllib.parse import quote
+            gb_url = f"https://gamebanana.com/games/search?_sSearchString={quote(self.dashboard.game_name)}"
+            browse_gb_btn = Gtk.Button()
+            browse_gb_btn.set_child(Adw.ButtonContent(icon_name="gamebanana-logo", label=_("Browse GameBanana")))
+            browse_gb_btn.add_css_class("suggested-action")
+            browse_gb_btn.add_css_class("pill")
+            browse_gb_btn.set_cursor_from_name("pointer")
+            browse_gb_btn.connect("clicked", lambda x: webbrowser.open(gb_url))
+            dl_empty_buttons.append(browse_gb_btn)
+        elif "nexus_id" in self.dashboard.game_config:
             nexus_id = self.dashboard.game_config["nexus_id"]
             browse_nexus_btn = Gtk.Button()
             browse_nexus_btn.set_child(Adw.ButtonContent(icon_name="nexus-logo", label=_("Browse Nexus Mods")))

@@ -30,7 +30,14 @@ class GameDashboard(Gtk.Box):
         self.game_path = game_info["path"]
         self.platform = game_info["platform"]
         self.app_id = game_info.get("app_id")
-        self.game_config = load_yaml(game_info["game_config_path"])
+        raw_config = load_yaml(game_info["game_config_path"])
+        if isinstance(raw_config, list):
+            self.game_config = next(
+                (g for g in raw_config if g.get("full_name") == self.game_name or str(g.get("switch_id", "")).lower() == str(self.app_id).lower()),
+                {"name": self.game_name, "switch_id": self.app_id}
+            )
+        else:
+            self.game_config = raw_config or {}
         user_config = load_yaml(application.user_config_path)
         self.downloads_path = str(Path(os.path.join(Path(user_config.get("download_path")), self.game_name)))
         self.staging_path = Path(os.path.join(Path(user_config.get("staging_path")), self.game_name))

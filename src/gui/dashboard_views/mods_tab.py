@@ -61,7 +61,16 @@ class ModsTab(Gtk.Box):
         spacer = Gtk.Box(hexpand=True)
         action_bar.append(spacer)
 
-        if "nexus_id" in dashboard.game_config:
+        if dashboard.platform == "switch":
+            from urllib.parse import quote
+            gb_url = f"https://gamebanana.com/games/search?_sSearchString={quote(dashboard.game_name)}"
+            gb_btn = create_icon_button(
+                icon_name="gamebanana-logo",
+                tooltip=_(f"Browse GameBanana mods for {dashboard.game_name}"),
+                on_click=lambda x: webbrowser.open(gb_url)
+            )
+            action_bar.append(gb_btn)
+        elif "nexus_id" in dashboard.game_config:
             nexus_id = dashboard.game_config["nexus_id"]
             nexus_btn = create_icon_button(
                 icon_name="nexus-logo",
@@ -129,17 +138,28 @@ class ModsTab(Gtk.Box):
         self.main_content.append(self.revealer)
 
         # Empty State
+        is_switch = (dashboard.platform == "switch")
         self.empty_state = Adw.StatusPage(
-            icon_name="nexus-logo" if "nexus_id" in dashboard.game_config else "nomm-logo",
-            title=_("No Mods Installed Yet"),
-            description=_("You haven't installed any mods for this game yet.\nBrowse Nexus Mods to download mods with 'Mod Manager Download', or install downloaded archives from the Downloads tab."),
+            icon_name="gamebanana-logo" if is_switch else ("nexus-logo" if "nexus_id" in dashboard.game_config else "nomm-logo"),
+            title=_("No Switch Mods Installed Yet") if is_switch else _("No Mods Installed Yet"),
+            description=_("Switch mods typically come from GameBanana as archives (.zip, .rar, .7z) containing 'romfs' or 'exefs' folders.\nBrowse GameBanana to download mods, or drag mod archives into the Downloads tab.") if is_switch else _("You haven't installed any mods for this game yet.\nBrowse Nexus Mods to download mods with 'Mod Manager Download', or install downloaded archives from the Downloads tab."),
             vexpand=True,
             hexpand=True
         )
         
         empty_buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.CENTER)
         
-        if "nexus_id" in dashboard.game_config:
+        if is_switch:
+            from urllib.parse import quote
+            gb_url = f"https://gamebanana.com/games/search?_sSearchString={quote(dashboard.game_name)}"
+            browse_gb_btn = Gtk.Button()
+            browse_gb_btn.set_child(Adw.ButtonContent(icon_name="gamebanana-logo", label=_("Browse GameBanana")))
+            browse_gb_btn.add_css_class("suggested-action")
+            browse_gb_btn.add_css_class("pill")
+            browse_gb_btn.set_cursor_from_name("pointer")
+            browse_gb_btn.connect("clicked", lambda x: webbrowser.open(gb_url))
+            empty_buttons.append(browse_gb_btn)
+        elif "nexus_id" in dashboard.game_config:
             nexus_id = dashboard.game_config["nexus_id"]
             browse_nexus_btn = Gtk.Button()
             browse_nexus_btn.set_child(Adw.ButtonContent(icon_name="nexus-logo", label=_("Browse Nexus Mods")))
@@ -1138,17 +1158,19 @@ class ModsTab(Gtk.Box):
         threading.Thread(target=worker, daemon=True).start()
 
     def update_empty_state_with_legacy(self, legacy_count: int):
+        is_switch = (self.dashboard.platform == "switch")
         if legacy_count > 0:
             self.empty_state.set_title(_("Unmanaged Mods Detected"))
             self.empty_state.set_description(
-                _("Found {} unmanaged legacy mod(s) in the game directory.\n"
+                _("Found {} unmanaged legacy mod(s) in the game/emulator directory.\n"
                   "Click 'Migrate Existing Mods' below to import them into NOMM.").format(legacy_count)
             )
             self.empty_migrate_btn.add_css_class("suggested-action")
             self.empty_migrate_btn.set_visible(True)
         else:
-            self.empty_state.set_title(_("No Mods Installed Yet"))
+            self.empty_state.set_title(_("No Switch Mods Installed Yet") if is_switch else _("No Mods Installed Yet"))
             self.empty_state.set_description(
+                _("Switch mods typically come from GameBanana as archives (.zip, .rar, .7z) containing 'romfs' or 'exefs' folders.\nBrowse GameBanana to download mods, or drag mod archives into the Downloads tab.") if is_switch else
                 _("You haven't installed any mods for this game yet.\n"
                   "Browse Nexus Mods to download mods with 'Mod Manager Download', or install downloaded archives from the Downloads tab.")
             )
