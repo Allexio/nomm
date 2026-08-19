@@ -23,26 +23,28 @@ class EmulatorName(Enum):
     CITRON = "Citron"
     
 def find_matches(game_configs_dir) -> list:
-
     switch_config_path = os.path.join(game_configs_dir, "emulation/switch.yaml")
-    if not os.path.exists(switch_config_path) or list_emulators() == [] :
+    emulators = list_emulators()
+    if not os.path.exists(switch_config_path) or not emulators:
         return []
 
     PLATFORM = "switch"
     
-    emulator_name_str = load_user_config().get("preferred_switch_emulator", list_emulators()[0])
+    preferred = load_user_config().get("preferred_switch_emulator")
+    emulator_name_str = preferred if preferred in emulators else emulators[0]
     
     try:
         preferred_emulator = EmulatorName(emulator_name_str)
     except ValueError as e:
-        print(f"Preferred emulator value is not supported")
-        return[]
+        print(f"Preferred emulator value is not supported: {e}")
+        return []
     
     try:
-        with open(switch_config_path, 'r') as f:
-            supported_switch_games = yaml.safe_load(f)
+        with open(switch_config_path, 'r', encoding='utf-8') as f:
+            supported_switch_games = yaml.safe_load(f) or []
     except Exception as e:
         print(f"Was not able to load switch config - is it improperly formatted? {e}")
+        return []
 
     if preferred_emulator == EmulatorName.CITRON:
         game_path = CITRON_GAME_PATH
@@ -53,8 +55,18 @@ def find_matches(game_configs_dir) -> list:
     elif preferred_emulator == EmulatorName.RYUBING:
         game_path = RYUBING_GAME_PATH
         mods_path = RYUBING_MOD_PATH
+    else:
+        return []
     
-    installed_games = os.listdir(game_path)
+    if not os.path.isdir(game_path):
+        return []
+
+    try:
+        installed_games = os.listdir(game_path)
+    except OSError as e:
+        print(f"Failed to list switch games in {game_path}: {e}")
+        return []
+
     matches = []
 
     for game in supported_switch_games:
@@ -66,7 +78,7 @@ def find_matches(game_configs_dir) -> list:
         if game_id in installed_games:
             art = load_cached_assets(game["full_name"], PLATFORM)
             if not art:
-                cache_base = os.path.join(GLib.get_user_data_dir(), "nomm", "image-cache", PLATFORM, f"{game["full_name"]}")
+                cache_base = os.path.join(GLib.get_user_data_dir(), "nomm", "image-cache", PLATFORM, f"{game['full_name']}")
                 grid_path = os.path.join(cache_base, "art_grid.jpg")
                 download_image(game["grid_url"], grid_path)
                 hero_path = os.path.join(cache_base, "art_hero.jpg")
@@ -96,11 +108,11 @@ def find_matches(game_configs_dir) -> list:
 def list_emulators():
     """Lists Switch emulators installed on user's system"""
     installed_emulator_list = []
-    if os.path.exists(CITRON_GAME_PATH):
+    if os.path.isdir(CITRON_GAME_PATH):
         installed_emulator_list.append(EmulatorName.CITRON.value)
-    if os.path.exists(EDEN_GAME_PATH):
+    if os.path.isdir(EDEN_GAME_PATH):
         installed_emulator_list.append(EmulatorName.EDEN.value)
-    if os.path.exists(RYUBING_GAME_PATH):
+    if os.path.isdir(RYUBING_GAME_PATH):
         installed_emulator_list.append(EmulatorName.RYUBING.value)
 
     return installed_emulator_list
@@ -109,7 +121,8 @@ def get_emulator_logo(emulator):
     try:
         emulator = EmulatorName(emulator)
     except ValueError as e:
-        print(f"Preferred emulator value is not supported")
+        print(f"Preferred emulator value is not supported: {e}")
+        return None
     
     if emulator == EmulatorName.CITRON:
         return "citron-logo"
@@ -117,3 +130,4 @@ def get_emulator_logo(emulator):
         return "eden-logo"
     elif emulator == EmulatorName.RYUBING:
         return "ryubing-logo"
+    return None

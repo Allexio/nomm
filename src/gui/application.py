@@ -281,10 +281,16 @@ class Nomm(Adw.Application):
         dialog.select_folder(self.win, None, self.on_downloads_folder_selected_callback)
 
     def on_downloads_folder_selected_callback(self, dialog, result):
-        selected_folder_path = translate_fuse_path(dialog.select_folder_finish(result))
-        self.temp_config = {"download_path": selected_folder_path, "library_paths": []}
-        self.user_defined_paths = [selected_folder_path]
-        self.show_staging_select_screen()
+        try:
+            folder = dialog.select_folder_finish(result)
+            if not folder:
+                return
+            selected_folder_path = translate_fuse_path(folder)
+            self.temp_config = {"download_path": selected_folder_path, "library_paths": []}
+            self.user_defined_paths = [selected_folder_path]
+            self.show_staging_select_screen()
+        except Exception as e:
+            print(f"Mod downloads folder selection cancelled or failed: {e}")
 
     def show_staging_select_screen(self):
         self.remove_stack_child("setup")
@@ -311,10 +317,16 @@ class Nomm(Adw.Application):
         dialog.select_folder(self.win, None, self.on_staging_folder_selected_callback)
 
     def on_staging_folder_selected_callback(self, dialog, result):
-        selected_folder_path = translate_fuse_path(dialog.select_folder_finish(result))
-        self.temp_config["staging_path"] = selected_folder_path
-        self.user_defined_paths.append(selected_folder_path)
-        self.show_nexus_api_key_screen()
+        try:
+            folder = dialog.select_folder_finish(result)
+            if not folder:
+                return
+            selected_folder_path = translate_fuse_path(folder)
+            self.temp_config["staging_path"] = selected_folder_path
+            self.user_defined_paths.append(selected_folder_path)
+            self.show_nexus_api_key_screen()
+        except Exception as e:
+            print(f"Mod staging folder selection cancelled or failed: {e}")
 
     def show_nexus_api_key_screen(self):
         self.remove_stack_child("api_key")
@@ -427,16 +439,24 @@ class Nomm(Adw.Application):
         self.stack.set_visible_child_name("preferred_emu")
 
     def steam_user_id_handler(self):
-        steam_userdata_path = self.steam_base + "userdata/"
+        if not self.steam_base:
+            self.finalize_setup()
+            return
+        steam_userdata_path = os.path.join(self.steam_base, "userdata")
+        if not os.path.isdir(steam_userdata_path):
+            self.finalize_setup()
+            return
         steam_user_ids = [f for f in os.listdir(steam_userdata_path) if os.path.isdir(os.path.join(steam_userdata_path, f))]
         if "0" in steam_user_ids:
             steam_user_ids.remove("0")
         print(f"Steam user IDs detected: {steam_user_ids}")
         if len(steam_user_ids) > 1:
             self.show_steam_user_id_selection_screen(steam_user_ids)
-        else:
+        elif len(steam_user_ids) == 1:
             steam_user_id = steam_user_ids[0]
             self.temp_config["steam_user_id"] = steam_user_id
+            self.finalize_setup()
+        else:
             self.finalize_setup()
 
     def show_steam_user_id_selection_screen(self, steam_user_ids):
