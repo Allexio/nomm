@@ -62,8 +62,8 @@ class ModsTab(Gtk.Box):
         action_bar.append(spacer)
 
         if dashboard.platform == "switch":
-            from urllib.parse import quote
-            gb_url = f"https://gamebanana.com/games/search?_sSearchString={quote(dashboard.game_name)}"
+            from urllib.parse import quote_plus
+            gb_url = f"https://gamebanana.com/search?_sModelName=Game&_sOrder=best_match&_sSearchString={quote_plus(dashboard.game_name)}"
             gb_btn = create_icon_button(
                 icon_name="gamebanana-logo",
                 tooltip=_(f"Browse GameBanana mods for {dashboard.game_name}"),
@@ -150,8 +150,8 @@ class ModsTab(Gtk.Box):
         empty_buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.CENTER)
         
         if is_switch:
-            from urllib.parse import quote
-            gb_url = f"https://gamebanana.com/games/search?_sSearchString={quote(dashboard.game_name)}"
+            from urllib.parse import quote_plus
+            gb_url = f"https://gamebanana.com/search?_sModelName=Game&_sOrder=best_match&_sSearchString={quote_plus(dashboard.game_name)}"
             browse_gb_btn = Gtk.Button()
             browse_gb_btn.set_child(Adw.ButtonContent(icon_name="gamebanana-logo", label=_("Browse GameBanana")))
             browse_gb_btn.add_css_class("suggested-action")
