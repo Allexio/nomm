@@ -187,20 +187,31 @@ def sanitize_for_pango(raw_html: str) -> str:
 def list_archives(archives_directory: str):
 
     ARCHIVE_MIME_TYPES = {
-                "application/zip",
-                "application/x-zip-compressed",
-                "application/x-rar",
-                "application/vnd.rar",
-                "application/x-rar-compressed",
-                "application/x-7z-compressed"
-            }
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/x-rar",
+        "application/vnd.rar",
+        "application/x-rar-compressed",
+        "application/x-7z-compressed",
+        "application/x-tar",
+        "application/gzip"
+    }
+
+    ARCHIVE_EXTENSIONS = (
+        ".zip", ".rar", ".7z", ".tar", ".gz", ".xz", ".tgz", ".bnp"
+    )
 
     archive_list = []
 
     for file in os.listdir(archives_directory):
         full_path = os.path.join(archives_directory, file)
         
-        if not os.path.isfile(full_path):
+        if not os.path.isfile(full_path) or file.startswith("."):
+            continue
+
+        # Check by known file extension first
+        if any(file.lower().endswith(ext) for ext in ARCHIVE_EXTENSIONS):
+            archive_list.append(file)
             continue
             
         try:
@@ -208,13 +219,12 @@ def list_archives(archives_directory: str):
             file_info = gio_file.query_info("standard::content-type", Gio.FileQueryInfoFlags.NONE, None)
             mime_type = file_info.get_content_type()
             
-            
             # If the OS identifies it as a known archive file type, pull it in
             if mime_type in ARCHIVE_MIME_TYPES:
                 archive_list.append(file)
             else:
                 if "yaml" not in mime_type:
-                    print(f"[!] Could not identify mime type in download folder: {mime_type}")
+                    print(f"[!] Could not identify mime type in download folder: {mime_type} ({file})")
         except Exception as e:
             print(f"Error reading file metadata for {file}: {e}")
     
