@@ -25,6 +25,7 @@ class GameDashboard(Gtk.Box):
     def __init__(self, application, game_info, **kwargs):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, **kwargs)
         self.app = application
+        self.game_info = game_info
         self.game_name = game_info["name"]
         self.game_path = game_info["path"]
         self.platform = game_info["platform"]

@@ -16,6 +16,7 @@ from platforms.nexus import get_nexus_changelog, endorse_nexus_mod
 from platforms.nexus import get_mod_info as get_nexus_mod_info
 from platforms.gamebanana import get_mod_info as get_gamebanana_mod_info
 from core.tools import timestamp_converter, write_yaml, create_icon_button
+from core.legacy_migration import scan_legacy_mods, migrate_legacy_mods
 from gui.text_window import TextWindow
 from typing import Optional, Callable
 
@@ -88,6 +89,13 @@ class ModsTab(Gtk.Box):
             on_click=self.check_for_updates
         )
 
+        migrate_btn = create_icon_button(
+            icon_name="mat-folder-managed-symbolic",
+            tooltip=_("Scan & migrate legacy / unmanaged mods from game folder"),
+            on_click=self.on_scan_and_migrate_legacy_mods
+        )
+        action_bar.append(migrate_btn)
+
         action_bar.append(folder_btn)
         action_bar.append(update_btn)
 
@@ -147,6 +155,13 @@ class ModsTab(Gtk.Box):
         downloads_btn.set_cursor_from_name("pointer")
         downloads_btn.connect("clicked", lambda x: self.dashboard.dl_tab_btn.set_active(True))
         empty_buttons.append(downloads_btn)
+
+        self.empty_migrate_btn = Gtk.Button()
+        self.empty_migrate_btn.set_child(Adw.ButtonContent(icon_name="mat-folder-managed-symbolic", label=_("Migrate Existing Mods")))
+        self.empty_migrate_btn.add_css_class("pill")
+        self.empty_migrate_btn.set_cursor_from_name("pointer")
+        self.empty_migrate_btn.connect("clicked", self.on_scan_and_migrate_legacy_mods)
+        empty_buttons.append(self.empty_migrate_btn)
 
         if "wiki_link" in dashboard.game_config:
             wiki_guide_btn = Gtk.Button()
@@ -790,6 +805,10 @@ class ModsTab(Gtk.Box):
             if not staging_metadata or not staging_metadata.get("mods"):
                 self.main_content.set_visible(False)
                 self.empty_state.set_visible(True)
+                def check_empty_legacy():
+                    legacy = scan_legacy_mods(self.dashboard.game_info, staging_path)
+                    GLib.idle_add(self.update_empty_state_with_legacy, len(legacy))
+                threading.Thread(target=check_empty_legacy, daemon=True).start()
                 return
             else:
                 self.empty_state.set_visible(False)
@@ -819,7 +838,8 @@ class ModsTab(Gtk.Box):
                 row.set_activatable(True)
                 row.mod_data = mod_metadata
                 row.mod_data_index = mod
-                row.set_subtitle(mod_metadata.get("author", ""))
+                subtitle = mod_metadata.get("author") or (_("Migrated Legacy Mod") if mod_metadata.get("is_migrated") else "")
+                row.set_subtitle(subtitle)
 
                 row_element_margin = 10
 
@@ -1116,3 +1136,91 @@ class ModsTab(Gtk.Box):
             GLib.idle_add(on_complete_callback, staging_metadata)
 
         threading.Thread(target=worker, daemon=True).start()
+
+    def update_empty_state_with_legacy(self, legacy_count: int):
+        if legacy_count > 0:
+            self.empty_state.set_title(_("Unmanaged Mods Detected"))
+            self.empty_state.set_description(
+                _("Found {} unmanaged legacy mod(s) in the game directory.\n"
+                  "Click 'Migrate Existing Mods' below to import them into NOMM.").format(legacy_count)
+            )
+            self.empty_migrate_btn.add_css_class("suggested-action")
+            self.empty_migrate_btn.set_visible(True)
+        else:
+            self.empty_state.set_title(_("No Mods Installed Yet"))
+            self.empty_state.set_description(
+                _("You haven't installed any mods for this game yet.\n"
+                  "Browse Nexus Mods to download mods with 'Mod Manager Download', or install downloaded archives from the Downloads tab.")
+            )
+            self.empty_migrate_btn.remove_css_class("suggested-action")
+
+    def on_scan_and_migrate_legacy_mods(self, btn=None):
+        def do_scan():
+            legacy_mods = scan_legacy_mods(self.dashboard.game_info, self.dashboard.staging_path)
+            GLib.idle_add(show_migration_dialog, legacy_mods)
+
+        def show_migration_dialog(legacy_mods):
+            if not legacy_mods:
+                self.dashboard.show_message(
+                    _("No Legacy Mods Found"),
+                    _("No unmanaged mod files were detected in the game directory.")
+                )
+                return
+
+            mod_names_preview = "\n".join(
+                f"• {m['name']} ({len(m['files'])} file{'s' if len(m['files']) > 1 else ''})"
+                for m in legacy_mods[:10]
+            )
+            if len(legacy_mods) > 10:
+                mod_names_preview += f"\n... and {len(legacy_mods) - 10} more"
+
+            dialog = Adw.MessageDialog(
+                transient_for=self.dashboard.app.win,
+                heading=_("Migrate Legacy Mods"),
+                body=_("Found {} unmanaged mod(s) in the game directory:\n\n{}\n\n"
+                       "Would you like NOMM to import and manage them?\n\n"
+                       "Files will be moved to NOMM's staging directory and symlinked back into the game directory so your game continues to work seamlessly.").format(
+                    len(legacy_mods), mod_names_preview
+                )
+            )
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("migrate", _("Migrate ({} mods)").format(len(legacy_mods)))
+            dialog.set_response_appearance("migrate", Adw.ResponseAppearance.SUGGESTED)
+            dialog.set_default_response("migrate")
+
+            def on_response(d, response_id):
+                if response_id == "migrate":
+                    d.close()
+                    self.execute_migration(legacy_mods)
+
+            dialog.connect("response", on_response)
+            dialog.present()
+
+        threading.Thread(target=do_scan, daemon=True).start()
+
+    def execute_migration(self, legacy_mods):
+        def do_migrate():
+            count, errors = migrate_legacy_mods(
+                self.dashboard.game_info,
+                self.dashboard.staging_path,
+                self.dashboard.staging_metadata_path,
+                legacy_mods
+            )
+            GLib.idle_add(on_migration_complete, count, errors)
+
+        def on_migration_complete(count, errors):
+            self.populate_list()
+            self.dashboard.update_indicators()
+            if count > 0:
+                self.dashboard.show_message(
+                    _("Migration Complete"),
+                    _("Successfully migrated {} mod(s) into NOMM!").format(count)
+                )
+            elif errors:
+                self.dashboard.show_message(
+                    _("Migration Failed"),
+                    _("Could not migrate mods:\n{}").format("\n".join(errors[:5]))
+                )
+
+        threading.Thread(target=do_migrate, daemon=True).start()
+
